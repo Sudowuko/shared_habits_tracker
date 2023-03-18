@@ -1,1 +1,4 @@
 .env
+*.json
+venv
+discord.log

@@ -1,10 +1,22 @@
-const {REST, Routes, Client, GatewayIntentBits } = require('discord.js');
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, ComponentType,  MessageButton, MessageActionRow } = require('discord.js');
+const { initializeApp, applicationDefault } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+
+const { REST, Routes, Client, GatewayIntentBits } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, ComponentType, MessageButton, MessageActionRow } = require('discord.js');
 const { handleButtonInteraction, handleCommandInteraction } = require('./src/interactions');
 
 require('dotenv').config();
 
 const commands = require('./src/commands');
+const project_id = process.env.PROJECT_ID;
+const credential = applicationDefault();
+
+initializeApp({
+  credential,
+  projectId: project_id
+});
+
+const db = getFirestore();
 
 (async () => {
   try {
@@ -29,6 +41,10 @@ client.on('ready', () => {
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
+  const snapshot = await db.collection('users').get();
+  snapshot.forEach((doc) => {
+    console.log(doc.id, '=>', doc.data());
+  });
   await handleCommandInteraction(interaction);
 });
 
