@@ -1,12 +1,13 @@
+const { SlashCommandBuilder, SlashCommandStringOption} = require('@discordjs/builders');
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
+
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-async function handleCommandInteraction(interaction) {
-    const { commandName } = interaction;
-    if (commandName === 'pingo') {
-        await interaction.reply('Pong!');
-    } else if (commandName === 'addTokens') {
-        await interaction.reply('Add tokens test!')
-    } else if (commandName === 'buttons') {
+module.exports = { 
+    data: new SlashCommandBuilder().setName('buttons').setDescription('create team buttons'),
+    async execute(interaction) {
+        console.log("test");
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
@@ -23,14 +24,9 @@ async function handleCommandInteraction(interaction) {
                     .setStyle(ButtonStyle.Primary),
             );
         const messageContent = 'Test Message';
-        await interaction.reply({ content: messageContent, components: [row] });
-    }
-}
+        interaction.reply({ content: messageContent, components: [row] });
+	}
 
-async function handleButtonInteraction(interaction) {
-    const buttonId = interaction.customId;
-    console.log(`Button clicked: ${buttonId}`);
-    await interaction.reply(`Button clicked: ${buttonId}`);
-}
+};
 
-module.exports = { handleCommandInteraction, handleButtonInteraction };
+
