@@ -15,6 +15,7 @@ initializeApp({
 
 const db = getFirestore();
 
+
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.on('ready', () => {
