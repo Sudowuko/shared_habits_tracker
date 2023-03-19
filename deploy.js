@@ -1,6 +1,5 @@
 require('dotenv').config()
 const fs = require('fs')
-const { SlashCommandBuilder, SlashCommandStringOption } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const { Collection } = require('discord.js')
@@ -17,5 +16,7 @@ module.exports = {
             commands.push(commandObj)
             client.commands.set(commandObj.name, command)
         }
+        const rest = new REST({version: '9'}).setToken(process.env.DISCORD_TOKEN);
+        rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {body: commands})
     }
 }
