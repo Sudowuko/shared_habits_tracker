@@ -1,3 +1,4 @@
+//Test commit due to using a new device
 const { initializeApp, applicationDefault } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { REST, Routes, Client, GatewayIntentBits } = require('discord.js');
