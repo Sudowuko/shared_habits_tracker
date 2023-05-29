@@ -14,11 +14,13 @@ module.exports = {
         const monthlyLogs = doc.get('monthly_logs');
         const team = doc.get('team');
         const habit = doc.get('habit');
-        interaction.reply("```Personal Stats: " + user.username +
-            "\n Tokens: " + tokens +
-            "\nMonthly Logs: " + monthlyLogs +
-            "\nTeam: " + team +
+        const wins = doc.get('wins')
+        interaction.reply("```md\n#Stats -> " + user.username +
+            "\nTokens: " + tokens +
             "\nHabit: " + habit +
+            "\nTeam: " + team +
+            "\nWins: " + wins +
+            "\nMonthly Logs: " + monthlyLogs +
             "\n```");
     }
 }
