@@ -2,4 +2,4 @@
 *.json
 venv
 discord.log
-node_modules
+node_modules/
