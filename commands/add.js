@@ -24,7 +24,7 @@ module.exports = {
         const user = interaction.user;
         const docRef = db.collection('users').doc(user.id.toString());
         const doc = await docRef.get();
-        const tokens_added =parseInt(interaction.options.getString('tokens')) 
+        const tokens_added = parseInt(interaction.options.getString('tokens')) 
         docRef.update({
             "tokens": admin.firestore.FieldValue.increment(tokens_added)
         })

@@ -40,7 +40,6 @@ module.exports = {
                 emote: emojis[team_letter],
                 points: 0,
                 member_list: [],
-                member_count: 0
             });
             const team_name = (await teamRef.get()).data().team_name;
             createdTeams.push(team_name);

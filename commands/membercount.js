@@ -26,7 +26,8 @@ module.exports = {
 
     const usernamesList = usernames.join(', \n');
 
-    interaction.reply(`Registered Users:\n ${usernamesList}\n\nMember count: ${count}`);
-    return count;
+   interaction.reply(`Registered Users:\n ${usernamesList}\n\nMember count: ${count}`);
+   console.log("username list is: " + usernamesList) 
+   return usernamesList;
   }
 };
