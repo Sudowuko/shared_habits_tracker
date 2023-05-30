@@ -1,27 +1,32 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { getFirestore } = require('firebase-admin/firestore');
 
-const db = getFirestore()
+const db = getFirestore();
 
 module.exports = {
-
-    data: new SlashCommandBuilder()
+  data: new SlashCommandBuilder()
     .setName('membercount')
-    .setDescription('view registered members'),
-  
-async execute (interaction) {
+    .setDescription('View registered members'),
+
+  async execute(interaction) {
     let count = 0;
     const userRef = db.collection('users');
     const docs = await userRef.get();
-    
+    const usernames = [];
+
     docs.forEach((doc) => {
       const registered = doc.data().registered;
+      const username = doc.data().username;
+
       if (registered === true) {
+        usernames.push(username);
         count += 1;
       }
     });
-  
-    interaction.reply(`member count is ${count}`);
+
+    const usernamesList = usernames.join(', \n');
+
+    interaction.reply(`Registered Users:\n ${usernamesList}\n\nMember count: ${count}`);
     return count;
   }
-}
+};
