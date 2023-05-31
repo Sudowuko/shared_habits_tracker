@@ -14,9 +14,20 @@ module.exports = {
   async execute(interaction) {
     const teamsRef = db.collection('teams');
     const teamInfo = await teamsRef.get();
+    const user = interaction.user;
+    const docRef = db.collection('users').doc(user.id.toString());
+    const updated_user = await docRef.get();
+    const userTeamName = updated_user.data().team;
+    console.log("UserTeamName Part 1: " + userTeamName);
+    docRef.update({
+        "monthly_logs": admin.firestore.FieldValue.increment(1)
+    })
+    console.log("Interaction User ID: " + interaction.user)
 
     const buttons = [];
     teamInfo.forEach((team) => {
+    console.log("UserTeamName Part 2: " + userTeamName);
+
       const teamName = team.get('team_name');
       const teamButton = new ButtonBuilder()
         .setCustomId(teamName)
@@ -27,6 +38,7 @@ module.exports = {
     });
 
     const row = new ActionRowBuilder().addComponents(...buttons);
+    
 
     const messageContent = 'Test Message';
     interaction.reply({ content: messageContent, components: [row] });
