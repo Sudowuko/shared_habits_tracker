@@ -16,7 +16,6 @@ module.exports = {
   async execute(interaction) {
     const teamsRef = db.collection('teams');
     const teamInfo = await teamsRef.get();
-    
 
     const buttons = [];
     teamInfo.forEach((team) => {
@@ -35,29 +34,49 @@ module.exports = {
     interaction.reply({ content: messageContent, components: [row] });
 
     const filter = (interaction) =>
-      interaction.isButton() && interaction.user.id === user.id;
+      interaction.isButton() && interaction.user.id === interaction.user.id;
 
     const collector = interaction.channel.createMessageComponentCollector({
       filter,
       time: 150000,
     });
 
-
     const user = interaction.user;
     const docRef = db.collection('users').doc(user.id.toString());
     const updated_user = await docRef.get();
-    collector.on('collect', (interaction) => {
-        
-        const userTeamName = updated_user.data().team;
-        console.log("Team Button: " + interaction.customId)
-        if (userTeamName == interaction.customId) {
-            console.log("Monthly update successful")
-            docRef.update({
-                "monthly_logs": admin.firestore.FieldValue.increment(1)
-              });
-        }
+    const userTeamName = updated_user.data().team;
+    const userClickedButtons = [];
+
+    collector.on('collect', async (interaction) => {
+      const buttonId = interaction.customId;
       console.log('User ID:', interaction.user.id);
       console.log('User Team:', userTeamName);
+      console.log('Button Team:', buttonId);
+
+      if (userTeamName === buttonId && !userClickedButtons.includes(buttonId)) {
+        console.log('Monthly update successful');
+        docRef.update({
+          monthly_logs: admin.firestore.FieldValue.increment(1),
+        });
+        userClickedButtons.push(buttonId);
+
+       // const currentDate = new Date().toLocaleDateString();
+        const pointMessage = `Habit Completed!`;
+
+        try {
+          await interaction.user.send(pointMessage);
+        } catch (error) {
+          console.error(`Failed to send message to user: ${error}`);
+        }
+      } else {
+        const clickedMessage = 'Wrong Team Selected!';
+
+        try {
+          await interaction.user.send(clickedMessage);
+        } catch (error) {
+          console.error(`Failed to send message to user: ${error}`);
+        }
+      }
     });
 
     collector.on('end', () => {
