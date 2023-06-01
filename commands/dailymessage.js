@@ -33,9 +33,7 @@ module.exports = {
     const messageContent = 'Test Message';
     interaction.reply({ content: messageContent, components: [row] });
 
-    const filter = (interaction) =>
-      interaction.isButton() && interaction.user.id === interaction.user.id;
-
+    const filter = (interaction) => interaction.isButton();
     const collector = interaction.channel.createMessageComponentCollector({
       filter,
       time: 150000,
@@ -53,29 +51,24 @@ module.exports = {
       console.log('User Team:', userTeamName);
       console.log('Button Team:', buttonId);
 
-      if (userTeamName === buttonId && !userClickedButtons.includes(buttonId)) {
-        console.log('Monthly update successful');
-        docRef.update({
-          monthly_logs: admin.firestore.FieldValue.increment(1),
-        });
-        userClickedButtons.push(buttonId);
+      if (userTeamName === buttonId) {
+        if (userClickedButtons.includes(buttonId)) {
+          const message = `Your habit has already been marked as completed!`;
+          await interaction.reply({ content: message, ephemeral: true });
+        } else {
+          console.log('Monthly update successful');
+          docRef.update({
+            monthly_logs: admin.firestore.FieldValue.increment(1),
+          });
+          userClickedButtons.push(buttonId);
 
-       // const currentDate = new Date().toLocaleDateString();
-        const pointMessage = `Habit Completed!`;
-
-        try {
-          await interaction.user.send(pointMessage);
-        } catch (error) {
-          console.error(`Failed to send message to user: ${error}`);
+          const currentDate = new Date().toLocaleDateString();
+          const message = `Congrats on completing your habit on ${currentDate}!`;
+          await interaction.reply({ content: message, ephemeral: true });
         }
       } else {
-        const clickedMessage = 'Wrong Team Selected!';
-
-        try {
-          await interaction.user.send(clickedMessage);
-        } catch (error) {
-          console.error(`Failed to send message to user: ${error}`);
-        }
+        const message = 'Wrong Team Selected!';
+        await interaction.reply({ content: message, ephemeral: true });
       }
     });
 
