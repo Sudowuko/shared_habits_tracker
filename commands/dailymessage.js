@@ -82,18 +82,24 @@ Hope you had a fantastic day and good luck for tomorrow!! `;
             try {
                 if (userTeamName === buttonName && !userClickedButtons.includes(buttonId)) {
                     console.log("Points Increasing")
-                    const pointsToAdd = 1; // Points to add per interaction
+                    const logsToAdd = 1; // Points to add per interaction
+                    const tokensToAdd = 10;
 
-                    // Calculate the new total points
-                    const currentPoints = userSnapshot.data()?.monthly_logs || 0;
-                    const newPoints = currentPoints + pointsToAdd;
+                    // Calculate the total for monthly logs
+                    const currentLogs = userSnapshot.data()?.monthly_logs || 0;
+                    const newLogs = currentLogs + logsToAdd;
+
+                    // Calculate the total for tokens
+                    const currentTokens = userSnapshot.data()?.tokens || 0;
+                    const newTokens = currentTokens + tokensToAdd;
 
                     docRef.update({
-                        monthly_logs: newPoints,
+                        tokens: newTokens,
+                        monthly_logs: newLogs,
                         clicked_buttons: admin.firestore.FieldValue.arrayUnion(buttonId),
                     });
                     const currentDate = new Date().toLocaleDateString();
-                    const message = `Congrats on completing your habit on ${currentDate}! You gained ${pointsToAdd} point. Total points: ${newPoints}.`;
+                    const message = `Congrats on completing your habit on ${currentDate}!`;
                     await interaction.reply({ content: message, ephemeral: true });
                 } else if (userTeamName === buttonName && userClickedButtons.includes(buttonId)) {
                     const message = `Your habit has already been marked as completed!`;
