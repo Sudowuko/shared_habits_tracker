@@ -41,6 +41,8 @@ module.exports = {
         const messageContent = 'Test Message';
         interaction.reply({ content: messageContent, components: [row] });
 
+        let interactionCount = 0; // Variable to track the number of interactions
+
         const filter = (i) => i.isButton() && i.user.id === interaction.user.id;
         const collector = interaction.channel.createMessageComponentCollector({
             filter,
@@ -49,29 +51,34 @@ module.exports = {
 
         const user = interaction.user;
         const docRef = db.collection('users').doc(user.id.toString());
-
-        const collectedInteractions = [];
-
+        
         collector.on('collect', async (interaction) => {
             const buttonId = interaction.customId;
             const buttonName = buttonLabels[buttonId];
-
+    
             console.log('User ID:', interaction.user.id);
             console.log('Button ID:', buttonId);
-            console.log('Button Team Name:', buttonName);
-
+            console.log('Button Team Name:\n', buttonName);
+    
             const userSnapshot = await docRef.get();
             const userTeamName = userSnapshot.data()?.team;
             const userClickedButtons = userSnapshot.data()?.clicked_buttons || [];
-
+    
             try {
                 if (userTeamName === buttonName && !userClickedButtons.includes(buttonId)) {
+                    console.log("Points Increasing")
+                    const pointsToAdd = 1; // Points to add per interaction
+    
+                    // Calculate the new total points
+                    const currentPoints = userSnapshot.data()?.monthly_logs || 0;
+                    const newPoints = currentPoints + pointsToAdd;
+    
                     docRef.update({
-                        monthly_logs: admin.firestore.FieldValue.increment(1),
+                        monthly_logs: newPoints,
                         clicked_buttons: admin.firestore.FieldValue.arrayUnion(buttonId),
                     });
                     const currentDate = new Date().toLocaleDateString();
-                    const message = `Congrats on completing your habit on ${currentDate}!`;
+                    const message = `Congrats on completing your habit on ${currentDate}! You gained ${pointsToAdd} point. Total points: ${newPoints}.`;
                     await interaction.reply({ content: message, ephemeral: true });
                 } else if (userTeamName === buttonName && userClickedButtons.includes(buttonId)) {
                     const message = `Your habit has already been marked as completed!`;
@@ -87,18 +94,11 @@ module.exports = {
                     console.error('Error:', error);
                 }
             }
-            collectedInteractions.push(interaction);
         });
 
         collector.on('end', () => {
             console.log('Button collector ended');
             // Additional logic after collecting all interactions
-        });
-
-
-
-        collector.on('end', () => {
-            console.log('Button collector ended');
         });
     },
 };
