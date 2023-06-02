@@ -38,10 +38,25 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(...buttons);
 
-        const messageContent = 'Test Message';
-        interaction.reply({ content: messageContent, components: [row] });
+        const currentDate = new Date();
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const currentMonth = monthNames[currentDate.getMonth()];
 
-        let interactionCount = 0; // Variable to track the number of interactions
+        const challengerChatId = '969621130610606190';
+
+        const messageContent = `**Daily Habit Challenge**
+
+**${currentMonth} Competition**
+
+Hello fam!! This is your daily reminder that it's time to log your habits!!
+
+Don't forget to click on your Team Button if you have completed your habit today!
+
+If you want to share more about what you did or talk about any other topics, feel free to use <#${challengerChatId}>
+
+Hope you had a fantastic day and good luck for tomorrow!! `;
+
+        interaction.reply({ content: messageContent, components: [row] });
 
         const filter = (i) => i.isButton() && i.user.id === interaction.user.id;
         const collector = interaction.channel.createMessageComponentCollector({
@@ -51,28 +66,28 @@ module.exports = {
 
         const user = interaction.user;
         const docRef = db.collection('users').doc(user.id.toString());
-        
+
         collector.on('collect', async (interaction) => {
             const buttonId = interaction.customId;
             const buttonName = buttonLabels[buttonId];
-    
+
             console.log('User ID:', interaction.user.id);
             console.log('Button ID:', buttonId);
             console.log('Button Team Name:\n', buttonName);
-    
+
             const userSnapshot = await docRef.get();
             const userTeamName = userSnapshot.data()?.team;
             const userClickedButtons = userSnapshot.data()?.clicked_buttons || [];
-    
+
             try {
                 if (userTeamName === buttonName && !userClickedButtons.includes(buttonId)) {
                     console.log("Points Increasing")
                     const pointsToAdd = 1; // Points to add per interaction
-    
+
                     // Calculate the new total points
                     const currentPoints = userSnapshot.data()?.monthly_logs || 0;
                     const newPoints = currentPoints + pointsToAdd;
-    
+
                     docRef.update({
                         monthly_logs: newPoints,
                         clicked_buttons: admin.firestore.FieldValue.arrayUnion(buttonId),

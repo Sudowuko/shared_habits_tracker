@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { getFirestore } = require('firebase-admin/firestore');
 
 const admin = require('firebase-admin');
 
@@ -43,7 +42,7 @@ module.exports = {
         // Shuffle the userDocs array
         const shuffledUserDocs = shuffleArray(userArray);
 
-        // Gets number of teams available
+        // Get team information
         const teamsRef = db.collection('teams');
         const teamInfo = await teamsRef.get();
         const teamCount = teamInfo.size;
@@ -88,35 +87,7 @@ module.exports = {
             }
         });
 
-        //Display team members
-
-        // VERIFY IF THE TEAMS SORT DISPLAY IS OFF BY ONE
-        let outputMessage = '';
-        // const teamsRef1 = db.collection('teams');
-        // const teamInfo1 = await teamsRef1.get();
-        console.log("Teams Sort Being Displayed");
-        teamInfo.forEach((team) => {
-            const teamName = team.get('team_name');
-            const members = team.get('member_list');
-            console.log("Team Name: " + teamName);
-            console.log("Members List: " + members);
-            const memberNames = [];
-            outputMessage += `Team: ${teamName}\n`;
-            members.forEach((member) => {
-                const userDoc = userDocs.docs.find((doc) => doc.id === member);
-                const username = userDoc.data().username;
-                memberNames.push(username);
-            });
-            memberNames.forEach((username) => {
-                outputMessage += `- ${username}\n`;
-            });
-            outputMessage += '\n';
-        });
-        if (outputMessage === '') {
-            outputMessage = 'No team information found.';
-        }
-
-        await interaction.reply(`Team Information:\n\n${outputMessage}`);
+        await interaction.reply(`Teams have been organized`);
 
         return
     },

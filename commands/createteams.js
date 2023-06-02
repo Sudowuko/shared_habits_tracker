@@ -36,7 +36,7 @@ module.exports = {
             const team_letter = String.fromCharCode(64 + (team_num + 1));
             const teamRef = teamsRef.doc(team_letter);
             await teamRef.set({
-                team_name: "team_" + team_letter,
+                team_name: "Team " + team_letter,
                 emote: emojis[team_letter],
                 points: 0,
                 member_list: [],
