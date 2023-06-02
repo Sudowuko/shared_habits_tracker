@@ -1,79 +1,104 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const admin = require('firebase-admin');
+const { v4: uuidv4 } = require('uuid');
 
 // Initialize Firebase Admin SDK if not done already
 if (!admin.apps.length) {
-  admin.initializeApp();
+    admin.initializeApp();
 }
 
 const db = admin.firestore();
 
+const buttonLabels = {};
+
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('dailymessage')
-    .setDescription('create automatic team message for habit tracking'),
-  async execute(interaction) {
-    const teamsRef = db.collection('teams');
-    const teamInfo = await teamsRef.get();
+    data: new SlashCommandBuilder()
+        .setName('dailymessage')
+        .setDescription('create automatic team message for habit tracking'),
+    async execute(interaction) {
+        const teamsRef = db.collection('teams');
+        const teamInfo = await teamsRef.get();
 
-    const buttons = [];
-    teamInfo.forEach((team) => {
-      const teamName = team.get('team_name');
-      const teamButton = new ButtonBuilder()
-        .setCustomId(teamName)
-        .setLabel(teamName)
-        .setStyle(ButtonStyle.Primary);
+        const buttons = [];
+        teamInfo.forEach((team) => {
+            const teamName = team.get('team_name');
+            const buttonId = uuidv4().substr(0, 7);
+            buttonLabels[buttonId] = teamName;
 
-      buttons.push(teamButton);
-    });
+            const teamButton = new ButtonBuilder()
+                .setCustomId(buttonId)
+                .setLabel(teamName)
+                .setStyle(ButtonStyle.Primary);
 
-    const row = new ActionRowBuilder().addComponents(...buttons);
+            buttons.push(teamButton);
+            console.log("Adding Labels: " + buttonLabels[buttonId]);
+        });
+        console.log("All Buttons: " + buttons);
 
-    const messageContent = 'Test Message';
-    interaction.reply({ content: messageContent, components: [row] });
+        const row = new ActionRowBuilder().addComponents(...buttons);
 
-    const filter = (interaction) => interaction.isButton();
-    const collector = interaction.channel.createMessageComponentCollector({
-      filter,
-      time: 150000,
-    });
+        const messageContent = 'Test Message';
+        interaction.reply({ content: messageContent, components: [row] });
 
-    const user = interaction.user;
-    const docRef = db.collection('users').doc(user.id.toString());
-    const updated_user = await docRef.get();
-    const userTeamName = updated_user.data().team;
-    const userClickedButtons = [];
+        const filter = (i) => i.isButton() && i.user.id === interaction.user.id;
+        const collector = interaction.channel.createMessageComponentCollector({
+            filter,
+            time: 300000,
+        });
 
-    collector.on('collect', async (interaction) => {
-      const buttonId = interaction.customId;
-      console.log('User ID:', interaction.user.id);
-      console.log('User Team:', userTeamName);
-      console.log('Button Team:', buttonId);
+        const user = interaction.user;
+        const docRef = db.collection('users').doc(user.id.toString());
 
-      if (userTeamName === buttonId) {
-        if (userClickedButtons.includes(buttonId)) {
-          const message = `Your habit has already been marked as completed!`;
-          await interaction.reply({ content: message, ephemeral: true });
-        } else {
-          console.log('Monthly update successful');
-          docRef.update({
-            monthly_logs: admin.firestore.FieldValue.increment(1),
-          });
-          userClickedButtons.push(buttonId);
+        const collectedInteractions = [];
 
-          const currentDate = new Date().toLocaleDateString();
-          const message = `Congrats on completing your habit on ${currentDate}!`;
-          await interaction.reply({ content: message, ephemeral: true });
-        }
-      } else {
-        const message = 'Wrong Team Selected!';
-        await interaction.reply({ content: message, ephemeral: true });
-      }
-    });
+        collector.on('collect', async (interaction) => {
+            const buttonId = interaction.customId;
+            const buttonName = buttonLabels[buttonId];
 
-    collector.on('end', () => {
-      console.log('Button collector ended');
-    });
-  },
+            console.log('User ID:', interaction.user.id);
+            console.log('Button ID:', buttonId);
+            console.log('Button Team Name:', buttonName);
+
+            const userSnapshot = await docRef.get();
+            const userTeamName = userSnapshot.data()?.team;
+            const userClickedButtons = userSnapshot.data()?.clicked_buttons || [];
+
+            try {
+                if (userTeamName === buttonName && !userClickedButtons.includes(buttonId)) {
+                    docRef.update({
+                        monthly_logs: admin.firestore.FieldValue.increment(1),
+                        clicked_buttons: admin.firestore.FieldValue.arrayUnion(buttonId),
+                    });
+                    const currentDate = new Date().toLocaleDateString();
+                    const message = `Congrats on completing your habit on ${currentDate}!`;
+                    await interaction.reply({ content: message, ephemeral: true });
+                } else if (userTeamName === buttonName && userClickedButtons.includes(buttonId)) {
+                    const message = `Your habit has already been marked as completed!`;
+                    await interaction.reply({ content: message, ephemeral: true });
+                } else {
+                    const message = 'Wrong Team Selected!';
+                    await interaction.reply({ content: message, ephemeral: true });
+                }
+            } catch (error) {
+                if (error.code === 40060) {
+                    console.log('Interaction already acknowledged');
+                } else {
+                    console.error('Error:', error);
+                }
+            }
+            collectedInteractions.push(interaction);
+        });
+
+        collector.on('end', () => {
+            console.log('Button collector ended');
+            // Additional logic after collecting all interactions
+        });
+
+
+
+        collector.on('end', () => {
+            console.log('Button collector ended');
+        });
+    },
 };
