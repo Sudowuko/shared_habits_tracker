@@ -24,16 +24,6 @@ client.on('ready', () => {
   CommandsDeploy.deployCommands(client);
   console.log(`Logged in as ${client.user.tag}!`);
   
-  // client.on('interactionCreate', async interaction => {
-  //   if (interaction.isButton()) {
-  //     const buttonId = interaction.customId;
-  //     console.log(`Button clicked: ${buttonId}`);
-  //     //await interaction.reply(`Test app.js`);
-  //     //await interaction.fetchReply();
-  //     //await interaction.update({ content: '' });
-  //  //   interaction.reply({ content: 'Button has been clicked! :)', ephemeral: true });
-  //   }
-  // });
 });
 
 //Used when a slash command is sent by a user
