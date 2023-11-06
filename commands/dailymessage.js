@@ -11,33 +11,15 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const buttonLabels = {};
+const intervals = {};
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('dailymessage')
         .setDescription('create automatic team message for habit tracking'),
     async execute(interaction) {
-        const teamsRef = db.collection('teams');
-        const teamInfo = await teamsRef.get();
-
-        const buttons = [];
-        teamInfo.forEach((team) => {
-            const teamName = team.get('team_name');
-            const buttonId = uuidv4().substr(0, 7);
-            buttonLabels[buttonId] = teamName;
-
-            const teamButton = new ButtonBuilder()
-                .setCustomId(buttonId)
-                .setLabel(teamName)
-                .setStyle(ButtonStyle.Primary);
-
-            buttons.push(teamButton);
-            console.log("Adding Labels: " + buttonLabels[buttonId]);
-        });
-        console.log("All Buttons: " + buttons);
-
-        const row = new ActionRowBuilder().addComponents(...buttons);
-
+       
+        // Variables for daily message content
         const currentDate = new Date();
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         const currentMonth = monthNames[currentDate.getMonth()];
@@ -56,7 +38,39 @@ If you want to share more about what you did or talk about any other topics, fee
 
 Hope you had a fantastic day and good luck for tomorrow!! `;
 
-        interaction.reply({ content: messageContent, components: [row] });
+        // Team variables and button content
+        const teamsRef = db.collection('teams');
+        const teamInfo = await teamsRef.get();
+
+        const buttons = [];
+        teamInfo.forEach((team) => {
+            const teamName = team.get('team_name');
+            const buttonId = uuidv4().substr(0, 7);
+            buttonLabels[buttonId] = teamName;
+
+            const teamButton = new ButtonBuilder()
+                .setCustomId(buttonId)
+                .setLabel(teamName)
+                .setStyle(ButtonStyle.Primary);
+
+            buttons.push(teamButton);
+            console.log("Adding Labels: " + buttonLabels[buttonId]);
+        });
+
+        const row = new ActionRowBuilder().addComponents(...buttons);
+        // Looping for repeated messages
+        const userId = interaction.user.id;
+        await interaction.deferReply(); 
+        if (intervals[userId]) {
+            interaction.editReply('You already started the daily message interval interval.');
+        }
+        else {
+            intervals[userId] = setInterval(() => {
+                interaction.followUp({ content: messageContent, components: [row] });
+                }, 10000);
+            interaction.editReply('Daily message interval started! You will receive a message every 10 seconds starting at 3:15 PM.');
+
+        }
 
         const filter = (i) => i.isButton() && i.user.id === interaction.user.id;
         const collector = interaction.channel.createMessageComponentCollector({
@@ -67,6 +81,7 @@ Hope you had a fantastic day and good luck for tomorrow!! `;
         const user = interaction.user;
         const docRef = db.collection('users').doc(user.id.toString());
 
+        // Logic for all button and point collecting
         collector.on('collect', async (interaction) => {
             const buttonId = interaction.customId;
             const buttonName = buttonLabels[buttonId];
