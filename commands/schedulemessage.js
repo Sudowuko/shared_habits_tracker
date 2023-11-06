@@ -1,27 +1,25 @@
+//OUTDATED COMMAND WILL DELETE SOON
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const schedule = require('node-schedule');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('schedulemessage')
         .setDescription('Schedules a daily message for the competition'),
     async execute(interaction) {
-        // Acknowledge the command
-        // interaction.reply('Scheduling the daily message...');
+        // Schedule the dailymessage logic to run at 5:50 PM
+        const scheduledTime = new Date();
+        scheduledTime.setHours(17, 11, 0); // Set the desired time
 
-        // Define the delay in milliseconds (10 seconds)
-        const delay = 2 * 1000;
-
-        // Use setTimeout to execute the dailymessage logic after the specified delay
-        setTimeout(() => {
-            console.log("Test 0");
+        // Use node-schedule to execute the dailymessage logic
+        schedule.scheduleJob(scheduledTime, () => {
             // Your daily message logic here (call dailymessage or include its logic here)
             const dailymessageCommand = interaction.client.commands.get('dailymessage');
-            console.log("Test 1")
             if (dailymessageCommand) {
-                console.log("Test 2")
                 dailymessageCommand.execute(interaction);
-                console.log("Test 3")
             }
-        }, delay);
+        });
+
+       // interaction.reply('Daily message has been scheduled at 5:50 PM.');
     },
 };

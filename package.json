@@ -5,6 +5,8 @@
     "firebase": "^9.18.0",
     "firebase-admin": "^11.5.0",
     "nanoid": "^2.1.2",
+    "node-cron": "^3.0.2",
+    "node-schedule": "^2.1.1",
     "uuid": "^9.0.0"
   }
 }
