@@ -2,6 +2,8 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const admin = require('firebase-admin');
 const { v4: uuidv4 } = require('uuid');
+const cron = require('node-cron');
+
 
 // Initialize Firebase Admin SDK if not done already
 if (!admin.apps.length) {
@@ -16,9 +18,21 @@ const intervals = {};
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('dailymessage')
-        .setDescription('create automatic team message for habit tracking'),
+        .setDescription('create automatic team message for habit tracking')
+        .addStringOption(option =>
+            option.setName('hours')
+                .setDescription('Set scheduled hour for daily message')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('mins')
+                .setDescription('Set scheduled minute for daily message')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('interval')
+                .setDescription('Set hour interval time for daily message')
+                .setRequired(true)),
     async execute(interaction) {
-       
+
         // Variables for daily message content
         const currentDate = new Date();
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -38,38 +52,43 @@ If you want to share more about what you did or talk about any other topics, fee
 
 Hope you had a fantastic day and good luck for tomorrow!! `;
 
-        // Team variables and button content
+        //Scheduling time and interval variables
+        const scheduleHour = parseInt(interaction.options.getString('hours'));
+        const scheduleMin = parseInt(interaction.options.getString('mins'));
+        const scheduleInterval = parseInt(interaction.options.getString('interval'));
+        const schedule = `${scheduleMin} ${scheduleHour} * * *`;
+        
+        // Team variables
         const teamsRef = db.collection('teams');
         const teamInfo = await teamsRef.get();
 
-        const buttons = [];
-        teamInfo.forEach((team) => {
-            const teamName = team.get('team_name');
-            const buttonId = uuidv4().substr(0, 7);
-            buttonLabels[buttonId] = teamName;
-
-            const teamButton = new ButtonBuilder()
-                .setCustomId(buttonId)
-                .setLabel(teamName)
-                .setStyle(ButtonStyle.Primary);
-
-            buttons.push(teamButton);
-            console.log("Adding Labels: " + buttonLabels[buttonId]);
-        });
-
-        const row = new ActionRowBuilder().addComponents(...buttons);
         // Looping for repeated messages
         const userId = interaction.user.id;
-        await interaction.deferReply(); 
+        await interaction.deferReply();
         if (intervals[userId]) {
-            interaction.editReply('You already started the daily message interval interval.');
+            interaction.editReply('Daily Message Schedule has already been set and is currently running');
         }
         else {
-            intervals[userId] = setInterval(() => {
-                interaction.followUp({ content: messageContent, components: [row] });
-                }, 10000);
-            interaction.editReply('Daily message interval started! You will receive a message every 10 seconds starting at 3:15 PM.');
+            cron.schedule(schedule, () => {
+                intervals[userId] = setInterval(() => {
+                    const buttons = [];
+                    teamInfo.forEach((team) => {
+                        const teamName = team.get('team_name');
+                        const buttonId = uuidv4().substr(0, 7);
+                        buttonLabels[buttonId] = teamName;
 
+                        const teamButton = new ButtonBuilder()
+                            .setCustomId(buttonId)
+                            .setLabel(teamName)
+                            .setStyle(ButtonStyle.Primary);
+
+                        buttons.push(teamButton);
+                    });
+                    const row = new ActionRowBuilder().addComponents(...buttons);
+                    interaction.followUp({ content: messageContent, components: [row] });
+                }, scheduleInterval * 360000); //1 hour = 360000 milliseconds
+            })
+            interaction.editReply(`Daily messages has been scheduled and will start at ${scheduleHour}:${scheduleMin}! Daily message will be repeating every ${scheduleInterval} hour(s)`);
         }
 
         const filter = (i) => i.isButton() && i.user.id === interaction.user.id;
@@ -85,18 +104,12 @@ Hope you had a fantastic day and good luck for tomorrow!! `;
         collector.on('collect', async (interaction) => {
             const buttonId = interaction.customId;
             const buttonName = buttonLabels[buttonId];
-
-            console.log('User ID:', interaction.user.id);
-            console.log('Button ID:', buttonId);
-            console.log('Button Team Name:\n', buttonName);
-
             const userSnapshot = await docRef.get();
             const userTeamName = userSnapshot.data()?.team;
             const userClickedButtons = userSnapshot.data()?.clicked_buttons || [];
 
             try {
                 if (userTeamName === buttonName && !userClickedButtons.includes(buttonId)) {
-                    console.log("Points Increasing")
                     const logsToAdd = 1; // Points to add per interaction
                     const tokensToAdd = 10;
 
@@ -134,7 +147,6 @@ Hope you had a fantastic day and good luck for tomorrow!! `;
 
         collector.on('end', () => {
             console.log('Button collector ended');
-            // Additional logic after collecting all interactions
         });
     },
 };
