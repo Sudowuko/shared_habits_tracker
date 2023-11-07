@@ -4,6 +4,13 @@ const admin = require('firebase-admin');
 const { v4: uuidv4 } = require('uuid');
 const cron = require('node-cron');
 
+//TODO
+
+/*
+Make parameters optional
+If command is ran a second time that is the ending break condition
+If that becomes solution, rename command to just dailymessage as there is no need to separate files
+*/
 
 // Initialize Firebase Admin SDK if not done already
 if (!admin.apps.length) {
@@ -17,7 +24,7 @@ const intervals = {};
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('dailymessage')
+        .setName('startdailymessage')
         .setDescription('create automatic team message for habit tracking')
         .addStringOption(option =>
             option.setName('hours')
@@ -86,7 +93,8 @@ Hope you had a fantastic day and good luck for tomorrow!! `;
                     });
                     const row = new ActionRowBuilder().addComponents(...buttons);
                     interaction.followUp({ content: messageContent, components: [row] });
-                }, scheduleInterval * 360000); //1 hour = 360000 milliseconds
+                }, scheduleInterval * 1000); //Note: Currently changed to seconds for testing purposes
+                
             })
             interaction.editReply(`Daily messages has been scheduled and will start at ${scheduleHour}:${scheduleMin}! Daily message will be repeating every ${scheduleInterval} hour(s)`);
         }
